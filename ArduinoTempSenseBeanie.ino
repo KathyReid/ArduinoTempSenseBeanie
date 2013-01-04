@@ -37,16 +37,22 @@ int Bpin   =  10;                  // tri-colour LED output to pin 09
 
 float tempSensorVal[] = {
   0,0,0};   // an array of temperature sensor values
+
 int   tempSensorPin[] = {
   0,1,2};   // the temp sensors will be connected to analogue pins 0, 1, 2 
-int   tempSensorFreq  = 5000;       // number of milliseconds between sensor readings
 
+int   tempSensorFreq  = 30000;       // number of milliseconds between sensor readings
 int   numSensors      = 3;          // the number of temperature sensors in use
+int   numSamples      = 5;          // the number of samples to take in each reading for better precision
 
 int   tempSensorUpper[] = {
   70,70,70}; // upper threshold for temp warning
 int   tempSensorLower[] = {
   30,30,30}; // lower threshold for temp warning
+
+float reading[] = {
+};
+float sum = 0;
 
 
 /*
@@ -91,14 +97,14 @@ void setup()
 
   initialiseRGB();
 
-  slide(green, yellow, med, medTime);
-  slide(yellow, green, med, medTime);
-  slide(green, yellow, med, medTime);
-  slide(yellow, green, med, medTime);
-  slide(green, yellow, med, medTime);
-  slide(yellow, green, med, medTime);
-  slide(green, yellow, med, medTime);
-  slide(yellow, green, med, medTime);
+  //  slide(green, yellow, med, medTime);
+  // slide(yellow, green, med, medTime);
+  // slide(green, yellow, med, medTime);
+  // slide(yellow, green, med, medTime);
+  // slide(green, yellow, med, medTime);
+  // slide(yellow, green, med, medTime);
+  // slide(green, yellow, med, medTime);
+  // slide(yellow, green, med, medTime);
 
 
 } 	 
@@ -106,18 +112,66 @@ void setup()
 void loop() 	// run over and over again
 { 	 
 
-  //   for (int i=0; i < numSensors; i++){
-  //    tempSensorVal[i] = analogRead(tempSensorPin[i]);
 
-  //  Serial.println('\n');
-  //  Serial.println(i);
-  // Serial.println(tempSensorVal[i]); 	// send that value to the computer
-  // } 
+  Serial.write("-----------------------START------------------------");
+
+
+
+  for (int i=0; i < numSensors; i++)
+  {
+
+    sum = 0;
+
+    Serial.println(analogRead(tempSensorPin[i]));
+
+    for (int j=0; j < numSamples; j++)
+    {
+      Serial.println(analogRead(tempSensorPin[i]));
+      reading[j] = analogRead(tempSensorPin[i]);
+      Serial.write(" reading j is: ");
+      delay(100);
+      Serial.print(reading[j], DEC);
+      Serial.write("\n");
+      Serial.write("i is: ");
+      Serial.print(i, DEC);
+      Serial.write(" j is: ");
+      Serial.print(j, DEC);
+      Serial.write("\n");
+    }
+
+    for (int k=0; k < (numSamples-1); k++)
+    {
+      sum = sum + reading[k];
+      Serial.write(" k is: ");
+      Serial.print(k);
+      Serial.write("\n");
+      Serial.write(" sum is: ");
+      Serial.print(sum);
+    }
+
+
+    tempSensorVal[i] = sum/numSamples;
+    Serial.write(" tempSensorVal[i] is: ");
+    Serial.print(tempSensorVal[i]);
+
+    /*
+    Now to convert the temperature reading in to Celcius
+     */
+
+    Serial.println('\n');
+    Serial.println(i);
+    Serial.println(tempSensorVal[i]); 	// send that value to the computer
+  } 
 
 
   /* Delay for defined delay period */
-  // delay(tempSensorFreq); 
+  delay(tempSensorFreq); 
 
 
 } 
+
+
+
+
+
 
