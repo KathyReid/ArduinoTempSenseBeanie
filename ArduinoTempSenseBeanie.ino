@@ -41,9 +41,10 @@ float tempSensorVal[] = {
 int   tempSensorPin[] = {
   0,1,2};   // the temp sensors will be connected to analogue pins 0, 1, 2 
 
-int   tempSensorFreq  = 30000;       // number of milliseconds between sensor readings
+int   tempSensorFreq  = 200;       // number of milliseconds between sensor readings
 int   numSensors      = 3;          // the number of temperature sensors in use
-int   numSamples      = 5;          // the number of samples to take in each reading for better precision
+int   numSamples      = 10;          // the number of samples to take in each reading for better precision
+int   sampleDelay     = 10;          // time in milliseconds to delay between each precision sample
 
 int   tempSensorUpper[] = {
   70,70,70}; // upper threshold for temp warning
@@ -54,6 +55,7 @@ float reading[] = {
 };
 float sum = 0;
 
+#define BANDGAPREF 14   // special indicator that we want to measure the bandgap
 
 /*
   Define RGB colours 
@@ -112,63 +114,71 @@ void setup()
 void loop() 	// run over and over again
 { 	 
 
-
-  Serial.write("-----------------------START------------------------");
-
-
-
   for (int i=0; i < numSensors; i++)
   {
 
     sum = 0;
 
-    Serial.println(analogRead(tempSensorPin[i]));
+    /* Multiple temperature samples are taken and averaged
+     to yield a higher degree of precision
+     You may wish to adjust the timing and number of samples 
+     */
 
     for (int j=0; j < numSamples; j++)
     {
-      Serial.println(analogRead(tempSensorPin[i]));
       reading[j] = analogRead(tempSensorPin[i]);
-      Serial.write(" reading j is: ");
-      delay(100);
-      Serial.print(reading[j], DEC);
-      Serial.write("\n");
-      Serial.write("i is: ");
-      Serial.print(i, DEC);
-      Serial.write(" j is: ");
-      Serial.print(j, DEC);
-      Serial.write("\n");
+      delay(sampleDelay);
     }
 
     for (int k=0; k < (numSamples-1); k++)
     {
       sum = sum + reading[k];
-      Serial.write(" k is: ");
-      Serial.print(k);
-      Serial.write("\n");
-      Serial.write(" sum is: ");
-      Serial.print(sum);
     }
 
-
     tempSensorVal[i] = sum/numSamples;
-    Serial.write(" tempSensorVal[i] is: ");
-    Serial.print(tempSensorVal[i]);
 
     /*
     Now to convert the temperature reading in to Celcius
      */
 
-    Serial.println('\n');
+    Serial.println("--------Doing Celcius conversion---------");
     Serial.println(i);
+    Serial.println("Value is: ");
     Serial.println(tempSensorVal[i]); 	// send that value to the computer
-  } 
-
+    
+    // get voltage reading from the secret internal 1.05V reference
+    float refReading = analogRead(BANDGAPREF);  
+    Serial.println(refReading);
+    
+    // now calculate our power supply voltage from the known 1.05 volt reading
+  float supplyvoltage = (1.05 * 1024) / refReading;
+  Serial.print(supplyvoltage); 
+  Serial.println("V power supply");
+  
+  // converting that reading to voltage
+  float voltage = (tempSensorVal[i] * supplyvoltage) / 1024;
+ 
+  // print out the voltage
+  Serial.print(voltage); 
+  Serial.println(" volts");
+ 
+  // now print out the temperature
+  float temperatureC = (voltage - 0.5) * 100 ;   //converting from 10 mv per degree wit 500 mV offset
+                                               //to degrees ((volatge - 500mV) times 100)
+  Serial.print(temperatureC); Serial.println(" degress C");
+ 
+  // now convert to Fahrenheight
+  float temperatureF = (temperatureC * 9 / 5) + 32;
+  Serial.print(temperatureF); Serial.println(" degress F");
+  }
 
   /* Delay for defined delay period */
   delay(tempSensorFreq); 
 
 
 } 
+
+
 
 
 
